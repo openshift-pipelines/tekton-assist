@@ -1,0 +1,156 @@
+version: 2
+image_name: gemini
+apis:
+- agents
+- datasetio
+- eval
+- files
+- inference
+- safety
+- scoring
+- telemetry
+- tool_runtime
+- vector_io
+providers:
+  inference:
+  - provider_id: gemini
+    provider_type: remote::gemini
+    config:
+      api_key: ${env.GEMINI_API_KEY:=}
+  vector_io:
+  - provider_id: faiss
+    provider_type: inline::faiss
+    config:
+      kvstore:
+        type: sqlite
+        db_path: ${env.SQLITE_STORE_DIR:=~/.llama/distributions/gemini}/faiss_store.db
+  files:
+  - provider_id: meta-reference-files
+    provider_type: inline::localfs
+    config:
+      storage_dir: ${env.FILES_STORAGE_DIR:=~/.llama/distributions/gemini/files}
+      metadata_store:
+        type: sqlite
+        db_path: ${env.SQLITE_STORE_DIR:=~/.llama/distributions/gemini}/files_metadata.db
+  safety:
+  - provider_id: llama-guard
+    provider_type: inline::llama-guard
+    config:
+      excluded_categories: []
+  agents:
+  - provider_id: meta-reference
+    provider_type: inline::meta-reference
+    config:
+      persistence_store:
+        type: sqlite
+        db_path: ${env.SQLITE_STORE_DIR:=~/.llama/distributions/gemini}/agents_store.db
+      responses_store:
+        type: sqlite
+        db_path: ${env.SQLITE_STORE_DIR:=~/.llama/distributions/gemini}/responses_store.db
+  telemetry:
+  - provider_id: meta-reference
+    provider_type: inline::meta-reference
+    config:
+      service_name: "${env.OTEL_SERVICE_NAME:=\u200B}"
+      sinks: ${env.TELEMETRY_SINKS:=console,sqlite}
+      sqlite_db_path: ${env.SQLITE_STORE_DIR:=~/.llama/distributions/gemini}/trace_store.db
+  eval:
+  - provider_id: meta-reference
+    provider_type: inline::meta-reference
+    config:
+      kvstore:
+        type: sqlite
+        db_path: ${env.SQLITE_STORE_DIR:=~/.llama/distributions/gemini}/meta_reference_eval.db
+  datasetio:
+  - provider_id: huggingface
+    provider_type: remote::huggingface
+    config:
+      kvstore:
+        type: sqlite
+        db_path: ${env.SQLITE_STORE_DIR:=~/.llama/distributions/gemini}/huggingface_datasetio.db
+  - provider_id: localfs
+    provider_type: inline::localfs
+    config:
+      kvstore:
+        type: sqlite
+        db_path: ${env.SQLITE_STORE_DIR:=~/.llama/distributions/gemini}/localfs_datasetio.db
+  scoring:
+  - provider_id: basic
+    provider_type: inline::basic
+    config: {}
+  - provider_id: llm-as-judge
+    provider_type: inline::llm-as-judge
+    config: {}
+  - provider_id: braintrust
+    provider_type: inline::braintrust
+    config:
+      openai_api_key: ${env.OPENAI_API_KEY:=}
+  tool_runtime:
+  - provider_id: brave-search
+    provider_type: remote::brave-search
+    config:
+      api_key: ${env.BRAVE_SEARCH_API_KEY:=}
+      max_results: 3
+  - provider_id: tavily-search
+    provider_type: remote::tavily-search
+    config:
+      api_key: ${env.TAVILY_SEARCH_API_KEY:=}
+      max_results: 3
+  - provider_id: rag-runtime
+    provider_type: inline::rag-runtime
+    config: {}
+  - provider_id: model-context-protocol
+    provider_type: remote::model-context-protocol
+    config: {}
+metadata_store:
+  type: sqlite
+  db_path: ${env.SQLITE_STORE_DIR:=~/.llama/distributions/gemini}/registry.db
+inference_store:
+  type: sqlite
+  db_path: ${env.SQLITE_STORE_DIR:=~/.llama/distributions/gemini}/inference_store.db
+models:
+- metadata: {}
+  model_id: gemini-1.5-flash
+  provider_id: gemini
+  provider_model_id: gemini/gemini-1.5-flash
+  model_type: llm
+- metadata: {}
+  model_id: gemini-1.5-pro
+  provider_id: gemini
+  provider_model_id: gemini/gemini-1.5-pro
+  model_type: llm
+- metadata: {}
+  model_id: gemini-2.0-flash
+  provider_id: gemini
+  provider_model_id: gemini/gemini-2.0-flash
+  model_type: llm
+- metadata: {}
+  model_id: gemini-2.5-flash
+  provider_id: gemini
+  provider_model_id: gemini/gemini-2.5-flash
+  model_type: llm
+- metadata: {}
+  model_id: gemini-2.5-pro
+  provider_id: gemini
+  provider_model_id: gemini/gemini-2.5-pro
+  model_type: llm
+- metadata:
+    embedding_dimension: 768
+    context_length: 2048
+  model_id: text-embedding-004
+  provider_id: gemini
+  provider_model_id: gemini/text-embedding-004
+  model_type: embedding
+shields:
+- shield_id: meta-llama/Llama-Guard-3-8B
+vector_dbs: []
+datasets: []
+scoring_fns: []
+benchmarks: []
+tool_groups:
+- toolgroup_id: builtin::websearch
+  provider_id: tavily-search
+- toolgroup_id: builtin::rag
+  provider_id: rag-runtime
+server:
+  port: 8321
