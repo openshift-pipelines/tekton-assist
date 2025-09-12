@@ -26,5 +26,5 @@ OPENAI_API_KEY="$GEMINI_API_KEY" ./diagnose serve \
 ```
 ### Test
 ```
-curl -s "http://localhost:8080/taskrun/explainFailure?namespace=default&taskrun_name=pipelinerun-go-golangci-lint" | jq
+curl -s "http://localhost:8080/taskrun/explainFailure?namespace=default&taskrun=pipelinerun-go-golangci-lint" | jq
 ```
