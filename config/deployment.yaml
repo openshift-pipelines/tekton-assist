@@ -96,7 +96,8 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: openai-api-key
-                  key: api-key
+                  key: openai-api-key
+                  optional: true
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

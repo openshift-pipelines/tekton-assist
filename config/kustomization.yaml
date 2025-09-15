@@ -11,7 +11,7 @@ resources:
 secretGenerator:
   - name: openai-api-key
     files:
-      - env/openai-api-key
+      - openai-api-key=env/openai-api-key
     options:
       disableNameSuffixHash: true
 
