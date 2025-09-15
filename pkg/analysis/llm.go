@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	openai "github.com/openai/openai-go/v2"
@@ -42,6 +43,8 @@ func NewOpenAILLM(cfg OpenAIConfig) (LLM, error) {
 	if apiKey == "" {
 		apiKey = os.Getenv("OPENAI_API_KEY")
 	}
+	// Secrets mounted via env may include trailing newlines; trim to avoid invalid Authorization header
+	apiKey = strings.TrimSpace(apiKey)
 	if cfg.Provider != "ollama" && apiKey == "" {
 		log.Fatal("API key is required for provider: ", cfg.Provider)
 	}
