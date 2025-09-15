@@ -9,3 +9,8 @@ bin
 
 # secrets
 env
+config/env/
+
+# Binaries
+tkn-assist
+diagnose
