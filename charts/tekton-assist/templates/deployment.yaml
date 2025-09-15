@@ -19,19 +19,12 @@ metadata:
   name: tekton-assist
   namespace: openshift-pipelines
   labels:
-    assist.tekton.dev/release: "devel"
-    app.kubernetes.io/component: tekton-assist
-    app.kubernetes.io/instance: default
-    app.kubernetes.io/part-of: tekton-assist
+    {{- include "tekton-assist.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: tekton-assist
-      app.kubernetes.io/name: tekton-assist
-      app.kubernetes.io/component: tekton-assist
-      app.kubernetes.io/instance: default
-      app.kubernetes.io/part-of: tekton-assist
+      {{- include "tekton-assist.selector" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -39,14 +32,7 @@ spec:
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
       labels:
-        app: tekton-assist
-        app.kubernetes.io/name: tekton-assist
-        app.kubernetes.io/component: tekton-assist
-        app.kubernetes.io/instance: default
-        app.kubernetes.io/version: "devel"
-        app.kubernetes.io/part-of: tekton-assist
-        version: "devel"
-        assist.tekton.dev/release: "devel"
+        {{- include "tekton-assist.labels" . | nindent 6 }}
     spec:
       # To avoid node becoming SPOF, spread our replicas to different nodes.
       affinity:
@@ -55,11 +41,7 @@ spec:
             - podAffinityTerm:
                 labelSelector:
                   matchLabels:
-                    app: tekton-assist
-                    app.kubernetes.io/name: tekton-assist
-                    app.kubernetes.io/component: tekton-assist
-                    app.kubernetes.io/instance: default
-                    app.kubernetes.io/part-of: tekton-assist
+                    {{- include "tekton-assist.selector" . | nindent 8 }}
                 topologyKey: kubernetes.io/hostname
               weight: 100
       serviceAccountName: tekton-assist
@@ -67,9 +49,10 @@ spec:
         - name: diagnose
           # This is the Go import path for the binary that is containerized
           # and substituted here.
-          image: ko://github.com/openshift-pipelines/tekton-assist/cmd/diagnose
+          image: {{ .Values.tekton-assist.deployment.image.repository }}
           command: ["/ko-app/diagnose"]
           args: ["serve", "--addr", ":8080"]
+          imagePullPolicy: {{ .Values.tekton-assist.deployment.image.pullPolicy }}
           resources:
             requests:
               cpu: 100m
@@ -93,7 +76,7 @@ spec:
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: openai-api-key
+                  name: tekton-assist-openai-api-key
                   key: openai-api-key
                   optional: true
           securityContext:
@@ -111,18 +94,9 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app.kubernetes.io/name: tekton-assist
-    app.kubernetes.io/component: tekton-assist
-    app.kubernetes.io/instance: default
-    app.kubernetes.io/version: "devel"
-    app.kubernetes.io/part-of: tekton-assist
-    pruner.tekton.dev/release: "devel"
-    app: tekton-assist
-    version: "devel"
+    {{- include "tekton-assist.labels" . | nindent 4 }}
   annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "9090"
-    prometheus.io/path: "/metrics"
+    {{- include "tekton-assist.annotations" . | nindent 4 }}
   name: tekton-assist
   namespace: openshift-pipelines
 spec:
@@ -136,7 +110,4 @@ spec:
       targetPort: 9090
       port: 9090
   selector:
-    app.kubernetes.io/name: tekton-assist
-    app.kubernetes.io/component: tekton-assist
-    app.kubernetes.io/instance: default
-    app.kubernetes.io/part-of: tekton-assist
+    {{- include "tekton-assist.selector" . | nindent 4 }}

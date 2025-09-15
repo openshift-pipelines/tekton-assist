@@ -3,6 +3,11 @@ kind: ConfigMap
 metadata:
   name: tekton-assist-config
   namespace: openshift-pipelines
+  labels:
+    assist.tekton.dev/release: "devel"
+    app.kubernetes.io/component: tekton-assist
+    app.kubernetes.io/instance: default
+    app.kubernetes.io/part-of: tekton-assist
 data:
   PROVIDER: "gemini"
   OPENAI_MODEL: "gemini-2.5-flash"

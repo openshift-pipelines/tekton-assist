@@ -13,18 +13,24 @@ Tekton Assistant helps explain failed Pipelines/TaskRuns and guide remediation.
 
 ## Using Gemini LLM
 
-### Build
+### Build for local testing
 ```
 go build ./cmd/diagnose
 ```
 
-### Usage
+### Use command line for local testing
 ```
-OPENAI_API_KEY="$GEMINI_API_KEY" ./diagnose serve \
+OPENAI_API_KEY="$GEMINI_API_KEY" go run ./cmd/diagnose serve \
   --openai-base-url "https://generativelanguage.googleapis.com/v1beta/openai/" \
   --openai-model "gemini-2.5-flash" --debug
 ```
-### Test
+
+### Deploy for local testing
+```
+KO_DOCKER_REPO=kind.local make apply
+```
+
+### Test the deployment
 ```
 curl -s "http://localhost:8080/taskrun/explainFailure?namespace=default&taskrun=pipelinerun-go-golangci-lint" | jq
 ```

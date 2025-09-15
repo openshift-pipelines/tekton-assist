@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -105,11 +106,11 @@ func (h *httpServer) handleExplainFailure(w http.ResponseWriter, r *http.Request
 	}
 
 	// DEMO: pretty text output
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	/*w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 	_, _ = w.Write([]byte(analysis.RenderPrettyReportANSI(result, analysisText)))
-	return
+	return*/
 
-	/*// Original JSON response (commented out for demo; keep to rollback easily)
+	// Original JSON response (commented out for demo; keep to rollback easily)
 	type response struct {
 		Debug    interface{} `json:"debug"`
 		Analysis string      `json:"analysis,omitempty"`
@@ -117,7 +118,7 @@ func (h *httpServer) handleExplainFailure(w http.ResponseWriter, r *http.Request
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(response{Debug: result, Analysis: analysisText}); err != nil {
 		h.log.Printf("Failed to encode response: %v", err)
-	}*/
+	}
 }
 
 // startListener starts the HTTP server with graceful shutdown
