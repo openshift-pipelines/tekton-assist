@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tekton-assist-config
+  namespace: openshift-pipelines
+  labels:
+    {{- include "tekton-assist.labels" . | nindent 4 }}
+data:
+  PROVIDER: {{ .Values.tekton-assist.openai.provider | quote }}
+  OPENAI_MODEL: {{ .Values.tekton-assist.openai.model | quote }}
+  OPENAI_BASE_URL: {{ .Values.tekton-assist.openai.baseURL | quote }}
+  OPENAI_TEMPERATURE: {{ .Values.tekton-assist.openai.temperature | quote }}
+  OPENAI_MAX_TOKENS: {{ .Values.tekton-assist.openai.maxTokens | quote }}
+  OPENAI_TIMEOUT: {{ .Values.tekton-assist.openai.timeout | quote }}
+  DEBUG: {{ .Values.tekton-assist.openai.debug | quote }}
