@@ -19,6 +19,7 @@ type LLM interface {
 // OpenAIConfig holds configuration for the OpenAI-backed LLM.
 type OpenAIConfig struct {
 	APIKey         string
+	Provider       string
 	Model          string
 	Temperature    float32
 	MaxTokens      int
@@ -40,6 +41,9 @@ func NewOpenAILLM(cfg OpenAIConfig) (LLM, error) {
 	apiKey := cfg.APIKey
 	if apiKey == "" {
 		apiKey = os.Getenv("OPENAI_API_KEY")
+	}
+	if cfg.Provider != "ollama" && apiKey == "" {
+		log.Fatal("API key is required for provider: ", cfg.Provider)
 	}
 
 	// Build client options

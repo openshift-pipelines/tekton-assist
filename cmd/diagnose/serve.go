@@ -20,6 +20,7 @@ var serveCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		logger := log.New(os.Stdout, "tekton-assist ", log.LstdFlags|log.Lshortfile)
 		llm, err := analysis.NewOpenAILLM(analysis.OpenAIConfig{
+			Provider:       cfg.Provider,
 			Model:          cfg.OpenAIModel,
 			BaseURL:        cfg.OpenAIBase,
 			Temperature:    cfg.Temperature,

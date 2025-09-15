@@ -9,6 +9,7 @@ import (
 type Config struct {
 	Addr string
 	// LLM config
+	Provider    string
 	OpenAIModel string
 	OpenAIBase  string
 	Temperature float32
@@ -24,6 +25,7 @@ var (
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&cfg.Addr, "addr", ":8080", "HTTP listen address")
+	rootCmd.PersistentFlags().StringVar(&cfg.Provider, "provider", "gemini", "LLM provider")
 	rootCmd.PersistentFlags().StringVar(&cfg.OpenAIModel, "openai-model", "gpt-4o-mini", "OpenAI model name")
 	rootCmd.PersistentFlags().StringVar(&cfg.OpenAIBase, "openai-base-url", "", "Optional OpenAI-compatible base URL")
 	rootCmd.PersistentFlags().Float32Var(&cfg.Temperature, "openai-temperature", 0.2, "OpenAI sampling temperature")

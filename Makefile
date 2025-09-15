@@ -44,13 +44,16 @@ bin/%: cmd/% FORCE
 KO = $(or ${KO_BIN},${KO_BIN},$(BIN)/ko)
 $(BIN)/ko: PACKAGE=github.com/google/ko@latest
 
+KUSTOMIZE = $(or ${KUSTOMIZE_BIN},kustomize)
+KUBECTL = $(or ${KUBECTL_BIN},kubectl)
+
 .PHONY: apply
-apply: | $(KO) ; $(info $(M) ko apply -R -f config/) @ ## Apply config to the current cluster
-	$Q $(KO) apply -R -f config
+apply: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config | $(KO) resolve -f - | $(KUBECTL) apply -f -) @ ## Apply config to the current cluster
+	$Q $(KUSTOMIZE) build config | $(KO) resolve -f - | $(KUBECTL) apply -f -
 
 .PHONY: resolve
-resolve: | $(KO) ; $(info $(M) ko resolve -R -f config/) @ ## Resolve config to the current cluster
-	$Q $(KO) resolve --push=false --oci-layout-path=$(BIN)/oci -R -f config
+resolve: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config | $(KO) resolve -f -) @ ## Resolve config to the current cluster
+	$Q $(KUSTOMIZE) build config | $(KO) resolve -f -
 
 .PHONY: vendor
 vendor:

@@ -70,6 +70,8 @@ spec:
           # This is the Go import path for the binary that is containerized
           # and substituted here.
           image: ko://github.com/openshift-pipelines/tekton-assist/cmd/diagnose
+          command: ["/ko-app/diagnose"]
+          args: ["serve", "--addr", ":8080"]
           resources:
             requests:
               cpu: 100m
@@ -78,6 +80,8 @@ spec:
               cpu: 1000m
               memory: 1000Mi
           ports:
+            - name: http
+              containerPort: 8080
             - name: metrics
               containerPort: 9090
           envFrom:
@@ -99,9 +103,6 @@ spec:
             capabilities:
               drop:
                 - "ALL"
-            # User 65532 is the distroless nonroot user ID
-            runAsUser: 65532
-            runAsGroup: 65532
             runAsNonRoot: true
             seccompProfile:
               type: RuntimeDefault
@@ -127,6 +128,10 @@ metadata:
   namespace: openshift-pipelines
 spec:
   ports:
+    - name: http
+      protocol: TCP
+      targetPort: 8080
+      port: 8080
     - name: http-metrics
       protocol: TCP
       targetPort: 9090

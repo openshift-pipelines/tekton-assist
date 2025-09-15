@@ -4,6 +4,7 @@ metadata:
   name: tekton-assist-config
   namespace: openshift-pipelines
 data:
+  PROVIDER: "gemini"
   OPENAI_MODEL: "gemini-2.5-flash"
   OPENAI_BASE_URL: "https://generativelanguage.googleapis.com/v1beta/openai/"
   OPENAI_TEMPERATURE: "0.2"

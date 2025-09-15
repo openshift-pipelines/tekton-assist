@@ -1,0 +1,17 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: openshift-pipelines
+resources:
+- namespace.yaml
+- clusterrole.yaml
+- clusterrolebinding.yaml
+- serviceaccount.yaml
+- configmap.yaml
+- deployment.yaml
+secretGenerator:
+  - name: openai-api-key
+    files:
+      - env/openai-api-key
+    options:
+      disableNameSuffixHash: true
+
