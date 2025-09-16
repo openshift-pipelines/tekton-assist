@@ -19,6 +19,9 @@ M = $(shell printf "\033[34;1m🐱\033[0m")
 
 export GO111MODULE=on
 
+# Default KO_DOCKER_REPO if not provided
+export KO_DOCKER_REPO ?= kind.local
+
 COMMANDS=$(patsubst cmd/%,%,$(wildcard cmd/*))
 BINARIES=$(addprefix bin/,$(COMMANDS))
 
@@ -51,6 +54,10 @@ KUBECTL = $(or ${KUBECTL_BIN},kubectl)
 apply: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config | $(KO) resolve -f - | $(KUBECTL) apply -f -) @ ## Apply config to the current cluster
 	$Q $(KUSTOMIZE) build config | $(KO) resolve -f - | $(KUBECTL) apply -f -
 
+.PHONY: apply-dev
+apply-dev: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config/overlays/dev | $(KO) resolve -f - | $(KUBECTL) apply -f -) @ ## Apply dev overlay (uses local secret file, not committed)
+	$Q $(KUSTOMIZE) build config/overlays/dev | $(KO) resolve -f - | $(KUBECTL) apply -f -
+
 .PHONY: resolve
 resolve: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config | $(KO) resolve -f -) @ ## Resolve config to the current cluster
 	$Q $(KUSTOMIZE) build config | $(KO) resolve -f -
@@ -63,7 +70,7 @@ vendor:
 # Misc
 
 .PHONY: clean
-clean: ; $(info $(M) cleaning…)	@ ## Cleanup everything
+clean: ; $(info $(M) cleaning…) 	@ ## Cleanup everything
 	@rm -rf $(BIN)
 	@rm -rf bin
 	@rm -rf test/tests.* test/coverage.*
