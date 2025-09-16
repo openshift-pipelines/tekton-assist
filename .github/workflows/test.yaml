@@ -1,0 +1,12 @@
+name: Local Test for Tekton Assist
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    uses: ./.github/workflows/reusable-e2e.yaml   # point to your file
+    with:
+      pipelines-release: "v1.10.0"            # example Tekton release
+      k8s-version: "v1.29.0"  

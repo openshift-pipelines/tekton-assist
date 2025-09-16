@@ -1,0 +1,17 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: tekton-assist
+nodes:
+  - role: control-plane
+    kubeadmConfigPatches:
+      - |
+        kind: ClusterConfiguration
+        apiServer:
+          extraArgs:
+            "service-account-issuer": "kubernetes.default.svc"
+            "service-account-signing-key-file": "/etc/kubernetes/pki/sa.key"
+    extraPortMappings:
+      - containerPort: 31080
+        hostPort: 31080
+        protocol: TCP
+
