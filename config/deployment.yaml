@@ -19,6 +19,7 @@ metadata:
   name: tekton-assist
   namespace: openshift-pipelines
   labels:
+    app.kubernetes.io/name: tekton-assist
     assist.tekton.dev/release: "devel"
     app.kubernetes.io/component: tekton-assist
     app.kubernetes.io/instance: default
@@ -27,11 +28,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: tekton-assist
       app.kubernetes.io/name: tekton-assist
       app.kubernetes.io/component: tekton-assist
       app.kubernetes.io/instance: default
       app.kubernetes.io/part-of: tekton-assist
+      assist.tekton.dev/release: "devel"
   template:
     metadata:
       annotations:
@@ -39,13 +40,10 @@ spec:
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
       labels:
-        app: tekton-assist
         app.kubernetes.io/name: tekton-assist
         app.kubernetes.io/component: tekton-assist
         app.kubernetes.io/instance: default
-        app.kubernetes.io/version: "devel"
         app.kubernetes.io/part-of: tekton-assist
-        version: "devel"
         assist.tekton.dev/release: "devel"
     spec:
       # To avoid node becoming SPOF, spread our replicas to different nodes.
@@ -55,11 +53,11 @@ spec:
             - podAffinityTerm:
                 labelSelector:
                   matchLabels:
-                    app: tekton-assist
                     app.kubernetes.io/name: tekton-assist
                     app.kubernetes.io/component: tekton-assist
                     app.kubernetes.io/instance: default
                     app.kubernetes.io/part-of: tekton-assist
+                    assist.tekton.dev/release: "devel"
                 topologyKey: kubernetes.io/hostname
               weight: 100
       serviceAccountName: tekton-assist
@@ -114,11 +112,8 @@ metadata:
     app.kubernetes.io/name: tekton-assist
     app.kubernetes.io/component: tekton-assist
     app.kubernetes.io/instance: default
-    app.kubernetes.io/version: "devel"
     app.kubernetes.io/part-of: tekton-assist
-    pruner.tekton.dev/release: "devel"
-    app: tekton-assist
-    version: "devel"
+    assist.tekton.dev/release: "devel"
   annotations:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9090"
@@ -140,3 +135,4 @@ spec:
     app.kubernetes.io/component: tekton-assist
     app.kubernetes.io/instance: default
     app.kubernetes.io/part-of: tekton-assist
+    assist.tekton.dev/release: "devel"

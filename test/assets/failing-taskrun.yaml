@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1
+kind: TaskRun
+metadata:
+  name: failing-tr
+  namespace: default
+spec:
+  taskSpec:
+    steps:
+      - name: always-fail
+        image: bash:5.2
+        script: |
+          #!/usr/bin/env bash
+          echo "Simulating failure"
+          exit 42
+

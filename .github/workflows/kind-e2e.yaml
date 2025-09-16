@@ -1,0 +1,30 @@
+name: Tekton-Assist kind E2E Tests
+
+on:
+  push:
+    branches:
+      - main
+      - release-*
+  pull_request:
+    branches:
+      - main
+      - release-*
+
+defaults:
+  run:
+    shell: bash
+    working-directory: ./
+
+jobs:
+  # This job is for testing the latest LTS version of Tekton Pipelines
+  pipelines-lts:
+    strategy:
+      fail-fast: false # Keep running if one leg fails.
+      matrix:
+        pipelines-release:
+        # This should follow the list of versions from https://github.com/tektoncd/pipeline/blob/main/releases.md#release
+        - v1.0.0
+    uses: ./.github/workflows/reusable-e2e.yaml
+    with:
+      k8s-version: v1.29.x
+      pipelines-release: ${{ matrix.pipelines-release }}
