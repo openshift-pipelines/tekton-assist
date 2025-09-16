@@ -54,10 +54,6 @@ KUBECTL = $(or ${KUBECTL_BIN},kubectl)
 apply: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config | $(KO) resolve -f - | $(KUBECTL) apply -f -) @ ## Apply config to the current cluster
 	$Q $(KUSTOMIZE) build config | $(KO) resolve -f - | $(KUBECTL) apply -f -
 
-.PHONY: apply-dev
-apply-dev: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config/overlays/dev | $(KO) resolve -f - | $(KUBECTL) apply -f -) @ ## Apply dev overlay (uses local secret file, not committed)
-	$Q $(KUSTOMIZE) build config/overlays/dev | $(KO) resolve -f - | $(KUBECTL) apply -f -
-
 .PHONY: resolve
 resolve: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config | $(KO) resolve -f -) @ ## Resolve config to the current cluster
 	$Q $(KUSTOMIZE) build config | $(KO) resolve -f -
