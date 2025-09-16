@@ -38,7 +38,7 @@ func tryHTTPGet(url string, timeout time.Duration) (*http.Response, []byte, erro
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	data, _ := io.ReadAll(resp.Body)
 	return resp, data, nil
 }
@@ -66,7 +66,7 @@ func TestExplainFailureE2E(t *testing.T) {
 	runCommand(t, "ko", "apply", "-BRf", "assets/mock-openai.yaml")
 	runCommand(t, "kubectl", "-n", "openshift-pipelines", "rollout", "status", "deploy/mock-openai", "--timeout=180s")
 	expected := "mock-analysis"
-	// Point to mock service and set provider=ollama to bypass API key requirement.
+	// Set base URL to mock service and set provider=ollama to bypass API key requirement.
 	runCommand(t, "kubectl", "-n", "openshift-pipelines", "set", "env", "deploy/tekton-assist", "OPENAI_BASE_URL=http://mock-openai.openshift-pipelines.svc.cluster.local:8081/", "PROVIDER=ollama", "DEBUG=true")
 	runCommand(t, "kubectl", "-n", "openshift-pipelines", "rollout", "status", "deploy/tekton-assist", "--timeout=180s")
 	// Cleanup env overrides to avoid conflicts with manifests in subsequent applies.
