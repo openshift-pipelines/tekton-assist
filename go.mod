@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.7
 
 require (
-	github.com/openai/openai-go/v2 v2.0.0
+	github.com/openai/openai-go/v2 v2.4.3
 	github.com/spf13/cobra v1.8.0
 	github.com/tektoncd/pipeline v1.3.1
 	gopkg.in/yaml.v2 v2.4.0
