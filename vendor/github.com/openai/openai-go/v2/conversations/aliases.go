@@ -1,6 +1,6 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-package openai
+package conversations
 
 import (
 	"github.com/openai/openai-go/v2/internal/apierror"
