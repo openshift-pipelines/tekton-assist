@@ -6,7 +6,7 @@ toolchain go1.24.7
 
 require (
 	github.com/openai/openai-go/v2 v2.4.3
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.10.1
 	github.com/tektoncd/pipeline v1.4.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.32.9
@@ -57,7 +57,7 @@ require (
 	github.com/prometheus/common v0.62.0 // indirect
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/prometheus/statsd_exporter v0.22.7 // indirect
-	github.com/spf13/pflag v1.0.6 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
