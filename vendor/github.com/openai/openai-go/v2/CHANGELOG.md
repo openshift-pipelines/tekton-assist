@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.6.0 (2025-09-19)
+
+Full Changelog: [v2.5.0...v2.6.0](https://github.com/openai/openai-go/compare/v2.5.0...v2.6.0)
+
+### Features
+
+* **api:** add reasoning_text ([6ebf50d](https://github.com/openai/openai-go/commit/6ebf50d756f06d951cdccff432615835bbf3165f))
+
+## 2.5.0 (2025-09-17)
+
+Full Changelog: [v2.4.3...v2.5.0](https://github.com/openai/openai-go/compare/v2.4.3...v2.5.0)
+
+### Features
+
+* **api:** type updates for conversations, reasoning_effort and results for evals ([3e68a60](https://github.com/openai/openai-go/commit/3e68a60d764645c5bfc9003f61525401268ef3a1))
+
 ## 2.4.3 (2025-09-15)
 
 Full Changelog: [v2.4.2...v2.4.3](https://github.com/openai/openai-go/compare/v2.4.2...v2.4.3)
