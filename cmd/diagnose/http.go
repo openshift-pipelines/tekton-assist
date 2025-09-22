@@ -46,6 +46,7 @@ func NewHTTPServer(endpoint string, log *log.Logger, llm analysis.LLM) *httpServ
 // registerHandlers registers all HTTP endpoints
 func (h *httpServer) registerHandlers() {
 	h.handlers["/taskrun/explainFailure"] = h.handleExplainFailure
+	h.handlers["/health"] = h.handleHealthCheck
 	// Add more endpoints here if needed
 }
 
@@ -67,6 +68,16 @@ func (h *httpServer) initServer() {
 		WriteTimeout: 60 * time.Second,
 		IdleTimeout:  120 * time.Second,
 	}
+}
+
+// handleHealthCheck implements a simple health check
+func (h *httpServer) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":    "healthy",
+		"timestamp": time.Now().Format(time.RFC3339),
+		"version":   "0.0.1",
+	})
 }
 
 // handleDiagnose handles the /taskrun/diagnose endpoint
