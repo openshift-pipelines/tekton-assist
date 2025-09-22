@@ -53,6 +53,13 @@ spec:
           command: ["/ko-app/diagnose"]
           args: ["serve", "--addr", ":8080"]
           imagePullPolicy: {{ index .Values "tekton-assist" "deployment" "image" "pullPolicy" }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
           resources:
             requests:
               cpu: 100m
