@@ -33,6 +33,17 @@ rules:
       - "update"
       - "patch"
 
+  # Read pod logs to enrich error snippets
+  - apiGroups:
+      - ""
+    resources:
+      - "pods"
+      - "pods/log"
+    verbs:
+      - "get"
+      - "list"
+      - "watch"
+
   # allows to manage taskruns and pipelineruns
   - apiGroups:
       - "tekton.dev"
