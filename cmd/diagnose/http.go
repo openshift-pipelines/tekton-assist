@@ -94,6 +94,7 @@ func (h *httpServer) handleExplainFailure(w http.ResponseWriter, r *http.Request
 
 	// Optionally ask LLM for diagnosis
 	var analysisText string
+	var llmErrMsg string
 	if h.llm != nil {
 		prompt := analysis.BuildTaskRunPrompt(result)
 		ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
@@ -102,6 +103,7 @@ func (h *httpServer) handleExplainFailure(w http.ResponseWriter, r *http.Request
 			analysisText = out
 		} else {
 			h.log.Printf("LLM analyze failed: %v", err)
+			llmErrMsg = err.Error()
 		}
 	}
 
@@ -114,9 +116,10 @@ func (h *httpServer) handleExplainFailure(w http.ResponseWriter, r *http.Request
 	type response struct {
 		Debug    interface{} `json:"debug"`
 		Analysis string      `json:"analysis,omitempty"`
+		LLMError string      `json:"llm_error,omitempty"`
 	}
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(response{Debug: result, Analysis: analysisText}); err != nil {
+	if err := json.NewEncoder(w).Encode(response{Debug: result, Analysis: analysisText, LLMError: llmErrMsg}); err != nil {
 		h.log.Printf("Failed to encode response: %v", err)
 	}
 }

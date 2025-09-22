@@ -1,6 +1,6 @@
 tekton-assist:
   openai:
-    apiKey: ""
+    secretName: "openai-api-key"
     provider: "gemini"
     model: "gemini-2.5-flash"
     baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/"
@@ -8,14 +8,9 @@ tekton-assist:
     maxTokens: 400
     timeout: 30s
     debug: false
-  labels:
-    assist.tekton.dev/release: "devel"
-    app.kubernetes.io/component: tekton-assist
-    app.kubernetes.io/instance: default
-    app.kubernetes.io/part-of: tekton-assist
   deployment:
     image:
-      repository: ko://github.com/openshift-pipelines/tekton-assist/cmd/diagnose
+      repository: ghcr.io/jkhelil/tekton-assist/diagnose-767dbf2a6080712a81c0df113eb69804:latest
       tag: devel
       pullPolicy: IfNotPresent
     customLabels:
@@ -23,8 +18,9 @@ tekton-assist:
       prometheus.io/scrape: "true"
       prometheus.io/port: "9090"
       prometheus.io/path: "/metrics"
-    selector:
-      app.kubernetes.io/name: tekton-assist
+    labels:
+      assist.tekton.dev/release: "devel"
       app.kubernetes.io/component: tekton-assist
       app.kubernetes.io/instance: default
       app.kubernetes.io/part-of: tekton-assist
+    
