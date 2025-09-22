@@ -19,15 +19,12 @@ metadata:
   name: tekton-assist
   namespace: openshift-pipelines
   labels:
-    {{ include "tekton-assist.labels" . | nindent 4 }}
+    {{- include "tekton-assist.labels" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "tekton-assist.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
-      app.kubernetes.io/component: tekton-assist
-      app.kubernetes.io/part-of: tekton-assist
+      {{- include "tekton-assist.labels" . | nindent 6 }}
   template:
     metadata:
       annotations:
@@ -35,7 +32,7 @@ spec:
         prometheus.io/port: "9090"
         prometheus.io/path: "/metrics"
       labels:
-        {{ include "tekton-assist.labels" . | nindent 6 }}
+        {{- include "tekton-assist.labels" . | nindent 8 }}
     spec:
       # To avoid node becoming SPOF, spread our replicas to different nodes.
       affinity:
@@ -44,10 +41,7 @@ spec:
             - podAffinityTerm:
                 labelSelector:
                   matchLabels:
-                    app.kubernetes.io/name: {{ include "tekton-assist.name" . }}
-                    app.kubernetes.io/instance: {{ .Release.Name }}
-                    app.kubernetes.io/component: tekton-assist
-                    app.kubernetes.io/part-of: tekton-assist
+                    {{- include "tekton-assist.labels" . | nindent 20 }}
                 topologyKey: kubernetes.io/hostname
               weight: 100
       serviceAccountName: tekton-assist
@@ -82,7 +76,7 @@ spec:
             - name: OPENAI_API_KEY
               valueFrom:
                 secretKeyRef:
-                  name: tekton-assist-openai-api-key
+                  name: {{ index .Values "tekton-assist" "openai" "secretName" }}
                   key: openai-api-key
                   optional: true
           securityContext:
@@ -100,9 +94,9 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    {{ include "tekton-assist.labels" . | nindent 4 }}
+    {{- include "tekton-assist.labels" . | nindent 4 }}
   annotations:
-    {{ include "tekton-assist.annotations" . | nindent 4 }}
+    {{- include "tekton-assist.annotations" . | nindent 4 }}
   name: tekton-assist
   namespace: openshift-pipelines
 spec:
@@ -116,7 +110,4 @@ spec:
       targetPort: 9090
       port: 9090
   selector:
-    app.kubernetes.io/name: {{ include "tekton-assist.name" . }}
-    app.kubernetes.io/instance: {{ .Release.Name }}
-    app.kubernetes.io/component: tekton-assist
-    app.kubernetes.io/part-of: tekton-assist
+    {{- include "tekton-assist.labels" . | nindent 4 }}
