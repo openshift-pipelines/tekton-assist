@@ -6,7 +6,7 @@ This chart is used to deploy Tekton Assist.
 
 Create the secret
 ```
-kubectl create secret generic openai-api-key --from-literal=openai-api-key=AIzaSyDd5D2bEFd3XoPfDr1faDKIw2w8CyekZOM -n openshift-pipelines
+kubectl create secret generic openai-api-key --from-literal=openai-api-key=xxx -n openshift-pipelines
 ```
 
 Install the chart
