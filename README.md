@@ -11,6 +11,43 @@ Tekton Assistant helps explain failed Pipelines/TaskRuns and guide remediation.
   - Suggests actionable fixes (e.g., permissions, image pull errors)
   - Examples: "Check if secret 'docker-creds' exists in namespace Y", "Verify registry authentication"
 
+## Flow chart
+The following diagram illustrates the request flow for the tekton-assist service:
+
+```mermaid
+graph TD
+    A[Client Request] --> B[GET /taskrun/explainFailure?taskrun=&namespace=]
+    B --> C{Validate Parameters}
+    C -->|Missing params| D[Return HTTP 400 Error]
+    C -->|Valid params| E[Create Inspector Instance]
+    
+    E --> F[Inspect TaskRun<br/>namespace, taskrunName]
+    F --> G{Fetch TaskRun Details}
+    G -->|Success| H[Get TaskRun Result]
+    G -->|Failure| I[Return HTTP 500 Error]
+    
+    H --> J{LLM Available?}
+    J -->|Yes| K[Build LLM Prompt<br/>with TaskRun data]
+    K --> L[Call LLM.Analyze<br/>with 45s timeout]
+    L --> M{LLM Analysis Success?}
+    M -->|Yes| N[Get Analysis Text]
+    M -->|No| O[Log Error, Store Error Message]
+    J -->|No| P[Skip LLM Analysis]
+    
+    N --> Q[Prepare JSON Response]
+    O --> Q
+    P --> Q
+    
+    Q --> R[Encode Response JSON]
+    R --> S[Return HTTP 200 Response]
+    
+    style A fill:#e1f5fe
+    style S fill:#e8f5e8
+    style D fill:#ffebee
+    style I fill:#ffebee
+
+```
+
 ## Using Gemini LLM
 
 ### Build for local testing
