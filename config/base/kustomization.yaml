@@ -8,3 +8,8 @@ resources:
 - serviceaccount.yaml
 - configmap.yaml
 - deployment.yaml
+
+images:
+- name: ghcr.io/openshift-pipelines/tekton-assist/assist
+  newName: ghcr.io/openshift-pipelines/tekton-assist/assist
+  newTag: devel

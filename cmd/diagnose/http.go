@@ -73,11 +73,13 @@ func (h *httpServer) initServer() {
 // handleHealthCheck implements a simple health check
 func (h *httpServer) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	if err := json.NewEncoder(w).Encode(map[string]string{
 		"status":    "healthy",
 		"timestamp": time.Now().Format(time.RFC3339),
 		"version":   "0.0.1",
-	})
+	}); err != nil {
+		h.log.Printf("Failed to encode health response: %v", err)
+	}
 }
 
 // handleDiagnose handles the /taskrun/diagnose endpoint

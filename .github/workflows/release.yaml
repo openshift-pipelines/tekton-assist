@@ -1,0 +1,152 @@
+name: Build and Release Tekton Assist
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      versionTag:
+        description: 'Version tag (e.g., v0.1.0)'
+        required: true
+      releaseAsLatest:
+        description: 'Release as latest'
+        type: boolean
+        default: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Clean workspace
+      run: git clean -fd
+  
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract version tag
+      id: version
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          echo "tag=${{ github.event.inputs.versionTag }}" >> $GITHUB_OUTPUT
+        else
+          echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Set up Ko
+      uses: imjasonh/setup-ko@v0.6
+
+    - name: Build and publish images with Ko
+      id: ko_build
+      env:
+        KO_DOCKER_REPO: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        KO_VERSION: ${{ steps.version.outputs.tag }}
+      run: |
+        set -ex
+        git update-index --assume-unchanged release/
+        # Create release directory
+        mkdir -p release
+
+        # Build and generate manifests
+        kustomize build config/overlays/dev | \
+          ko resolve \
+            --image-label=org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }} \
+            --image-label=org.opencontainers.image.version=${{ steps.version.outputs.tag }} \
+            --platform=linux/amd64,linux/arm64 \
+            -t ${{ steps.version.outputs.tag }} \
+            -f - > release/release.yaml
+
+
+        # Generate no-tags version
+        kustomize build config/overlays/dev | \
+          ko resolve \
+            --image-label=org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }} \
+            --image-label=org.opencontainers.image.version=${{ steps.version.outputs.tag }} \
+            --platform=linux/amd64,linux/arm64 \
+            -f - > release/release.notags.yaml
+
+        # Replace devel tags with actual version
+        sed -i \
+          -e 's/\(app.kubernetes.io\/version\): "devel"/\1: "${{ steps.version.outputs.tag }}"/g' \
+          -e 's/\(version\): "devel"/\1: "${{ steps.version.outputs.tag }}"/g' \
+          release/release.yaml release/release.notags.yaml
+
+        # Extract built images for later use
+        grep -h "image:" release/release.yaml | awk '{print $2}' | sort -u > built_images.txt
+
+        echo "images<<EOF" >> $GITHUB_OUTPUT
+        cat built_images.txt >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Tag images as latest
+      if: ${{ github.event.inputs.releaseAsLatest == 'true' || github.event_name != 'workflow_dispatch' }}
+      run: |
+        # Install crane
+        curl -sSL https://github.com/google/go-containerregistry/releases/latest/download/go-containerregistry_Linux_x86_64.tar.gz \
+        | sudo tar -xz -C /usr/local/bin crane
+        
+        # Tag images as latest
+        for IMAGE in ${{ steps.ko_build.outputs.images }}; do
+          IMAGE_WITHOUT_SHA=${IMAGE%%@*}
+          IMAGE_WITHOUT_SHA_AND_TAG=${IMAGE_WITHOUT_SHA%%:*}
+          IMAGE_WITH_SHA=${IMAGE_WITHOUT_SHA_AND_TAG}@${IMAGE##*@}
+          
+          crane copy $IMAGE_WITH_SHA $IMAGE_WITHOUT_SHA_AND_TAG:latest
+        done
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ steps.version.outputs.tag }}
+        name: Release ${{ steps.version.outputs.tag }}
+        body: |
+          Tekton Assist ${{ steps.version.outputs.tag }}
+          
+          ## Installation
+          
+          ```bash
+          kubectl apply -f https://github.com/openshift-pipelines/tekton-assist/releases/download/${{ steps.version.outputs.tag }}/release.yaml
+          ```
+          
+          ## Images
+          
+          The following images were built and published:
+          ```
+          ${{ steps.ko_build.outputs.images }}
+          ```
+        files: |
+          release/release.yaml
+          release/release.notags.yaml
+        draft: false
+        prerelease: ${{ contains(steps.version.outputs.tag, '-') }}
+
+    - name: Upload images list as artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: built-images-${{ steps.version.outputs.tag }}
+        path: |
+          image_digests.txt
+          built_images.txt
+        retention-days: 30
