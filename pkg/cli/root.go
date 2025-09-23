@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/openshift-pipelines/tekton-assist/pkg/cli/cmd/pipelinerun"
 	"github.com/openshift-pipelines/tekton-assist/pkg/cli/cmd/taskrun"
 	"github.com/openshift-pipelines/tekton-assist/pkg/cli/common"
 	"github.com/spf13/cobra"
@@ -43,6 +44,9 @@ This tool can be used as a tkn plugin by naming the binary 'tkn-assist'.`,
 		Example: `  # Diagnose a failed TaskRun
   tkn-assist taskrun diagnose my-failed-taskrun
 
+  # Diagnose a failed PipelineRun
+  tkn-assist pipelinerun diagnose my-failed-pipelinerun
+
   # Diagnose a TaskRun in a specific namespace
   tkn-assist taskrun diagnose my-taskrun -n my-namespace`,
 		SilenceUsage: true,
@@ -53,6 +57,7 @@ This tool can be used as a tkn plugin by naming the binary 'tkn-assist'.`,
 
 	// Add subcommands
 	rootCmd.AddCommand(taskrun.NewTaskRunCommand(params))
+	rootCmd.AddCommand(pipelinerun.NewPipelineRunCommand(params))
 	rootCmd.AddCommand(newVersionCommand())
 
 	return rootCmd
