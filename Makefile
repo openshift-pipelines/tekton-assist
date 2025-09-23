@@ -51,12 +51,12 @@ KUSTOMIZE = $(or ${KUSTOMIZE_BIN},kustomize)
 KUBECTL = $(or ${KUBECTL_BIN},kubectl)
 
 .PHONY: apply
-apply: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config | $(KO) resolve -f - | $(KUBECTL) apply -f -) @ ## Apply config to the current cluster
-	$Q $(KUSTOMIZE) build config | $(KO) resolve -f - | $(KUBECTL) apply -f -
+apply: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config/overlays/dev  | $(KO) resolve -f - | $(KUBECTL) apply -f -) @ ## Apply config to the current cluster
+	$Q $(KUSTOMIZE) build config/overlays/dev  | $(KO) resolve -f - | $(KUBECTL) apply -f -
 
 .PHONY: resolve
-resolve: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config | $(KO) resolve -f -) @ ## Resolve config to the current cluster
-	$Q $(KUSTOMIZE) build config | $(KO) resolve -f -
+resolve: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config/overlays/dev  | $(KO) resolve -f -) @ ## Resolve config to the current cluster
+	$Q $(KUSTOMIZE) build config/overlays/dev  | $(KO) resolve -f -
 
 .PHONY: vendor
 vendor:
