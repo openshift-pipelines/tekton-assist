@@ -9,12 +9,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
 
 	"github.com/openshift-pipelines/tekton-assist/pkg/analysis"
 	"github.com/openshift-pipelines/tekton-assist/pkg/inspector"
+	"github.com/openshift-pipelines/tekton-assist/pkg/types"
 )
 
 // HandlerFunc defines a generic HTTP handler function type
@@ -47,6 +49,7 @@ func NewHTTPServer(endpoint string, log *log.Logger, llm analysis.LLM) *httpServ
 func (h *httpServer) registerHandlers() {
 	h.handlers["/taskrun/explainFailure"] = h.handleExplainFailure
 	h.handlers["/health"] = h.handleHealthCheck
+	h.handlers["/pipelinerun/explainFailure"] = h.handlePipelineRunExplainFailure
 	// Add more endpoints here if needed
 }
 
@@ -135,6 +138,78 @@ func (h *httpServer) handleExplainFailure(w http.ResponseWriter, r *http.Request
 	if err := json.NewEncoder(w).Encode(response{Debug: result, Analysis: analysisText, LLMError: llmErrMsg}); err != nil {
 		h.log.Printf("Failed to encode response: %v", err)
 	}
+}
+
+// handlePipelineRunExplainFailure handles the /pipelinerun/explainFailure endpoint
+func (h *httpServer) handlePipelineRunExplainFailure(w http.ResponseWriter, r *http.Request) {
+	pipelineRunName := r.URL.Query().Get("name")
+	namespace := r.URL.Query().Get("namespace")
+	if pipelineRunName == "" || namespace == "" {
+		http.Error(w, "missing pipelinerun name or namespace", http.StatusBadRequest)
+		return
+	}
+
+	h.log.Printf("PipelineRun diagnosis request received: name=%s, namespace=%s", pipelineRunName, namespace)
+
+	ins, err := inspector.NewInspector()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to create inspector: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	result, err := ins.InspectPipelineRun(r.Context(), namespace, pipelineRunName)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("failed to inspect pipelinerun: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Optionally ask LLM for enhanced analysis if no TaskRuns exist
+	if h.llm != nil && len(result.FailedTaskRuns) == 0 {
+		prompt := buildPipelineRunPrompt(result)
+		ctx, cancel := context.WithTimeout(r.Context(), 45*time.Second)
+		defer cancel()
+		if out, err := h.llm.Analyze(ctx, prompt); err == nil {
+			result.Analysis = out
+		} else {
+			h.log.Printf("LLM analyze failed for PipelineRun: %v", err)
+		}
+	}
+
+	// Return JSON response
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(result); err != nil {
+		h.log.Printf("Failed to encode PipelineRun response: %v", err)
+	}
+}
+
+// buildPipelineRunPrompt creates a prompt for LLM analysis of PipelineRun failures
+func buildPipelineRunPrompt(result *types.PipelineRunDebugInfo) string {
+	var prompt strings.Builder
+
+	prompt.WriteString("Analyze this failed Tekton PipelineRun and provide a concise diagnosis:\n\n")
+	prompt.WriteString(fmt.Sprintf("PipelineRun: %s/%s\n", result.PipelineRun.Namespace, result.PipelineRun.Name))
+	prompt.WriteString(fmt.Sprintf("Status: %s\n", result.Status.Phase))
+
+	if len(result.Status.Conditions) > 0 {
+		prompt.WriteString("\nConditions:\n")
+		for _, cond := range result.Status.Conditions {
+			prompt.WriteString(fmt.Sprintf("- %s: %s (%s) - %s\n",
+				cond.Type, cond.Status, cond.Reason, cond.Message))
+		}
+	}
+
+	if len(result.FailedTaskRuns) > 0 {
+		prompt.WriteString(fmt.Sprintf("\nFailed TaskRuns (%d):\n", len(result.FailedTaskRuns)))
+		for _, tr := range result.FailedTaskRuns {
+			prompt.WriteString(fmt.Sprintf("- %s: %s - %s\n", tr.Name, tr.Reason, tr.Message))
+		}
+	} else {
+		prompt.WriteString("\nNo TaskRuns were created, indicating a validation or scheduling failure.\n")
+	}
+
+	prompt.WriteString("\nProvide a concise analysis of the root cause and suggested remediation steps.")
+
+	return prompt.String()
 }
 
 // startListener starts the HTTP server with graceful shutdown
