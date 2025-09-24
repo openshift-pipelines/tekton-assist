@@ -154,8 +154,8 @@ github.com/modern-go/reflect2
 # github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822
 ## explicit
 github.com/munnerz/goautoneg
-# github.com/openai/openai-go/v2 v2.6.0
-## explicit; go 1.21
+# github.com/openai/openai-go/v2 v2.7.0
+## explicit; go 1.22
 github.com/openai/openai-go/v2
 github.com/openai/openai-go/v2/conversations
 github.com/openai/openai-go/v2/internal
