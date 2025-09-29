@@ -56,7 +56,7 @@ jobs:
         fi
 
     - name: Set up Ko
-      uses: imjasonh/setup-ko@v0.6
+      uses: imjasonh/setup-ko@v0.9
 
     - name: Build and publish images with Ko
       id: ko_build
