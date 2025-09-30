@@ -59,3 +59,33 @@ func truncate(s string, n int) string {
 	}
 	return s[:n]
 }
+
+// buildPipelineRunPrompt creates a prompt for LLM analysis of PipelineRun failures
+func BuildPipelineRunPrompt(result *types.PipelineRunDebugInfo) string {
+	var prompt strings.Builder
+
+	prompt.WriteString("Analyze this failed Tekton PipelineRun and provide a concise diagnosis:\n\n")
+	prompt.WriteString(fmt.Sprintf("PipelineRun: %s/%s\n", result.PipelineRun.Namespace, result.PipelineRun.Name))
+	prompt.WriteString(fmt.Sprintf("Status: %s\n", result.Status.Phase))
+
+	if len(result.Status.Conditions) > 0 {
+		prompt.WriteString("\nConditions:\n")
+		for _, cond := range result.Status.Conditions {
+			prompt.WriteString(fmt.Sprintf("- %s: %s (%s) - %s\n",
+				cond.Type, cond.Status, cond.Reason, cond.Message))
+		}
+	}
+
+	if len(result.FailedTaskRuns) > 0 {
+		prompt.WriteString(fmt.Sprintf("\nFailed TaskRuns (%d):\n", len(result.FailedTaskRuns)))
+		for _, tr := range result.FailedTaskRuns {
+			prompt.WriteString(fmt.Sprintf("- %s: %s - %s\n", tr.Name, tr.Reason, tr.Message))
+		}
+	} else {
+		prompt.WriteString("\nNo TaskRuns were created, indicating a validation or scheduling failure.\n")
+	}
+
+	prompt.WriteString("\nProvide a concise analysis of the root cause and suggested remediation steps.")
+
+	return prompt.String()
+}
