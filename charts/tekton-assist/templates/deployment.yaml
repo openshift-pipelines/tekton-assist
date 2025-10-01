@@ -17,7 +17,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tekton-assist
-  namespace: openshift-pipelines
+  namespace: {{ default .Release.Namespace (index .Values "tekton-assist" "namespace") }}
   labels:
     {{- include "tekton-assist.labels" . | nindent 4 }}
 spec:
@@ -50,7 +50,7 @@ spec:
           # This is the Go import path for the binary that is containerized
           # and substituted here.
           image: {{ index .Values "tekton-assist" "deployment" "image" "repository" }}
-          command: ["/ko-app/diagnose"]
+          command: ["/ko-app/tekton-assist"]
           args: ["serve", "--addr", ":8080"]
           imagePullPolicy: {{ index .Values "tekton-assist" "deployment" "image" "pullPolicy" }}
           livenessProbe:
@@ -105,7 +105,7 @@ metadata:
   annotations:
     {{- include "tekton-assist.annotations" . | nindent 4 }}
   name: tekton-assist
-  namespace: openshift-pipelines
+  namespace: {{ default .Release.Namespace (index .Values "tekton-assist" "namespace") }}
 spec:
   ports:
     - name: http

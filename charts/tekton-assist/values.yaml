@@ -7,20 +7,28 @@ tekton-assist:
     temperature: 0.2
     maxTokens: 400
     timeout: 30s
-    debug: false
+  debug: false
+  namespace: "openshift-pipelines"
   deployment:
     image:
-      repository: ghcr.io/jkhelil/tekton-assist/diagnose-767dbf2a6080712a81c0df113eb69804:latest
+      repository: quay.io/redhat-user-workloads/tekton-ecosystem-tenant/next/tekton-assist-rhel9@sha256:75776fa4da4a96a614a70e950101c437dc294a11364f4963dee3d0c5ed898891
       tag: devel
-      pullPolicy: IfNotPresent
+      pullPolicy: Always
     customLabels:
     annotations:
       prometheus.io/scrape: "true"
       prometheus.io/port: "9090"
       prometheus.io/path: "/metrics"
+      meta.helm.sh/release-name: "tekton-assist"
+      meta.helm.sh/release-namespace: "openshift-pipelines"
     labels:
       assist.tekton.dev/release: "devel"
       app.kubernetes.io/component: tekton-assist
       app.kubernetes.io/instance: default
       app.kubernetes.io/part-of: tekton-assist
+      app.kubernetes.io/managed-by: Helm
     
+  rbac:
+    clusterRoleName: tekton-assist-cluster-access
+    clusterRoleBindingName: tekton-assist-cluster-access
+  
