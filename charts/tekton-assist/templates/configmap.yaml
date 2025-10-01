@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: tekton-assist-config
-  namespace: openshift-pipelines
+  namespace: {{ default .Release.Namespace (index .Values "tekton-assist" "namespace") }}
   labels:
     {{- include "tekton-assist.labels" . | nindent 4 }}
 data:
