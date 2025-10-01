@@ -99,7 +99,7 @@ func (h *httpServer) handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 
 // handleDiagnose handles the /taskrun/diagnose endpoint
 func (h *httpServer) handleExplainFailure(w http.ResponseWriter, r *http.Request) {
-	taskrunName := r.URL.Query().Get("taskrun")
+	taskrunName := r.URL.Query().Get("name")
 	namespace := r.URL.Query().Get("namespace")
 	if taskrunName == "" || namespace == "" {
 		http.Error(w, "missing taskrun name or namespace", http.StatusBadRequest)
