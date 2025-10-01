@@ -77,7 +77,7 @@ func (c *Client) ExplainFailure(ctx context.Context, req *ExplainFailureRequest)
 	endpoint := fmt.Sprintf("%s/taskrun/explainFailure", c.baseURL)
 	params := url.Values{}
 	params.Add("namespace", req.Namespace)
-	params.Add("taskrun", req.TaskRun)
+	params.Add("name", req.TaskRun)
 
 	requestURL := fmt.Sprintf("%s?%s", endpoint, params.Encode())
 
