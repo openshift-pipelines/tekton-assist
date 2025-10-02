@@ -2,7 +2,7 @@ module github.com/openshift-pipelines/tekton-assist
 
 go 1.24.0
 
-toolchain go1.24.7
+toolchain go1.25.1
 
 require (
 	github.com/openai/openai-go/v2 v2.7.1
