@@ -23,7 +23,7 @@ import (
 	"github.com/openshift-pipelines/tekton-assist/pkg/cli/client"
 	"github.com/openshift-pipelines/tekton-assist/pkg/cli/common"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // DiagnoseOptions holds options specific to the diagnose command
@@ -272,7 +272,7 @@ func displayStructuredText(data map[string]interface{}) error {
 					condStatus, _ := cond["status"].(string)
 					reason, _ := cond["reason"].(string)
 					message, _ := cond["message"].(string)
-					
+
 					var statusIcon string
 					switch condStatus {
 					case "True":
@@ -282,7 +282,7 @@ func displayStructuredText(data map[string]interface{}) error {
 					default:
 						statusIcon = "❓"
 					}
-					
+
 					fmt.Printf("  %s %s: %s (%s)\n", statusIcon, condType, condStatus, reason)
 					if message != "" {
 						fmt.Printf("    Message: %s\n", message)
@@ -302,7 +302,7 @@ func displayStructuredText(data map[string]interface{}) error {
 					name, _ := taskRun["name"].(string)
 					reason, _ := taskRun["reason"].(string)
 					message, _ := taskRun["message"].(string)
-					
+
 					fmt.Printf("  %d. ❌ %s\n", i+1, name)
 					fmt.Printf("     Reason: %s\n", reason)
 					if message != "" {
@@ -330,5 +330,3 @@ func displayStructuredText(data map[string]interface{}) error {
 	fmt.Println()
 	return nil
 }
-
-
