@@ -18,7 +18,9 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/openshift-pipelines/tekton-assist/pkg/cache"
 	"github.com/openshift-pipelines/tekton-assist/pkg/client"
 	"github.com/openshift-pipelines/tekton-assist/pkg/types"
 
@@ -26,7 +28,6 @@ import (
 	tektonclient "github.com/tektoncd/pipeline/pkg/client/clientset/versioned"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -41,6 +42,7 @@ type Inspector interface {
 type inspector struct {
 	tekton tektonclient.Interface
 	kube   kubernetes.Interface
+	cache  cache.ResourceCache
 }
 
 // NewInspectorWithConfig constructs an Inspector from a Kubernetes REST config.
@@ -56,7 +58,12 @@ func NewInspectorWithConfig(cfg *rest.Config) (Inspector, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &inspector{tekton: tekton, kube: kube}, nil
+	m := cache.NewManager(kube, tekton, "", 0)
+	svc := cache.NewService(m)
+	if err := svc.Start(context.Background()); err != nil {
+		return nil, fmt.Errorf("failed to start informers: %w", err)
+	}
+	return &inspector{tekton: tekton, kube: kube, cache: svc}, nil
 }
 
 // NewInspector constructs an Inspector using the default Kubernetes config resolution.
@@ -94,7 +101,7 @@ func NewInspectorFromKubeconfig(kubeconfigPath string) (Inspector, error) {
 // including the first failed step (if any) and a concise error description.
 func (i *inspector) InspectTaskRun(ctx context.Context, namespace, name string) (types.TaskRunDebugInfo, error) {
 	tri := types.TaskRunDebugInfo{TaskRun: name, Namespace: namespace}
-	tr, err := i.tekton.TektonV1().TaskRuns(namespace).Get(ctx, name, metav1.GetOptions{})
+	tr, err := i.cache.GetTaskRun(ctx, namespace, name)
 	if err != nil {
 		tri.Error = types.ErrorInfo{
 			Type:       classifyGetError(err),
@@ -275,8 +282,11 @@ func extractErrorSnippet(logText string, n int) string {
 // InspectPipelineRun fetches a PipelineRun and associated TaskRuns to provide
 // comprehensive failure analysis.
 func (i *inspector) InspectPipelineRun(ctx context.Context, namespace, name string) (*types.PipelineRunDebugInfo, error) {
-	// Fetch the PipelineRun
-	pr, err := i.tekton.TektonV1().PipelineRuns(namespace).Get(ctx, name, metav1.GetOptions{})
+	// Give informers a moment in short CLI runs (best effort)
+	_ = time.Second
+
+	// Fetch the PipelineRun from cache
+	pr, err := i.cache.GetPipelineRun(ctx, namespace, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pipelinerun %s/%s: %w", namespace, name, err)
 	}
@@ -294,19 +304,17 @@ func (i *inspector) InspectPipelineRun(ctx context.Context, namespace, name stri
 		FailedTaskRuns: []types.TaskRunSummary{},
 	}
 
-	// Query associated TaskRuns using the pipelineRun label
-	taskRuns, err := i.tekton.TektonV1().TaskRuns(namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: fmt.Sprintf("tekton.dev/pipelineRun=%s", name),
-	})
+	// Query associated TaskRuns using the pipelineRun label via cache
+	taskRuns, err := i.cache.ListTaskRunsForPipelineRun(ctx, namespace, name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list taskruns for pipelinerun %s/%s: %w", namespace, name, err)
 	}
 
 	// Find failed TaskRuns
 	failedTaskRuns := []types.TaskRunSummary{}
-	for _, tr := range taskRuns.Items {
-		if isTaskRunFailed(&tr) {
-			_, _, condReason, condMessage, _ := getTaskRunConditionFields(&tr)
+	for _, tr := range taskRuns {
+		if isTaskRunFailed(tr) {
+			_, _, condReason, condMessage, _ := getTaskRunConditionFields(tr)
 			failedTaskRuns = append(failedTaskRuns, types.TaskRunSummary{
 				Name:      tr.Name,
 				Namespace: tr.Namespace,
@@ -327,14 +335,14 @@ func (i *inspector) InspectPipelineRun(ctx context.Context, namespace, name stri
 		}
 		result.Analysis = fmt.Sprintf("Found %d failed TaskRuns. Run failure analysis on the individual taskrun failures: %s",
 			len(failedTaskRuns), strings.Join(taskRunNames, ", "))
-	} else if len(taskRuns.Items) == 0 {
+	} else if len(taskRuns) == 0 {
 		// Scenario 2: No TaskRuns exist - PipelineRun failed during validation/scheduling
 		result.Analysis = "No TaskRuns were created. PipelineRun failed during validation or scheduling. " +
 			analyzePipelineRunConditions(pr)
 	} else {
 		// Scenario 3: TaskRuns exist but none failed (shouldn't happen if PipelineRun failed)
 		result.Analysis = fmt.Sprintf("PipelineRun failed but no TaskRuns reported failures. Found %d TaskRuns total.",
-			len(taskRuns.Items))
+			len(taskRuns))
 	}
 
 	return result, nil

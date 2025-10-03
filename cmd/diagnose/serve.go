@@ -79,7 +79,10 @@ var serveCmd = &cobra.Command{
 		if err != nil {
 			logger.Printf("warning: OpenAI LLM disabled: %v", err)
 		}
-		srv := NewHTTPServer(cfg.Addr, logger, llm)
+		srv, err := NewHTTPServer(cfg.Addr, logger, llm)
+		if err != nil {
+			logger.Fatalf("failed to start server: %v", err)
+		}
 
 		var wg sync.WaitGroup
 		srv.startListener(&wg)
