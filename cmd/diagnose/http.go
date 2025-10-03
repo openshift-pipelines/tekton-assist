@@ -41,10 +41,11 @@ type httpServer struct {
 	log                *log.Logger
 	handlers           map[string]HandlerFunc
 	llm                analysis.LLM
+	ins                inspector.Inspector
 }
 
 // NewHTTPServer creates a new httpServer with modular handlers
-func NewHTTPServer(endpoint string, log *log.Logger, llm analysis.LLM) *httpServer {
+func NewHTTPServer(endpoint string, log *log.Logger, llm analysis.LLM) (*httpServer, error) {
 	h := &httpServer{
 		httpServerEndpoint: endpoint,
 		log:                log,
@@ -52,9 +53,16 @@ func NewHTTPServer(endpoint string, log *log.Logger, llm analysis.LLM) *httpServ
 		llm:                llm,
 	}
 
+	// Initialize a shared Inspector (and its underlying informers) once at startup.
+	ins, err := inspector.NewInspector()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize inspector: %w", err)
+	}
+	h.ins = ins
+
 	h.registerHandlers()
 	h.initServer()
-	return h
+	return h, nil
 }
 
 // registerHandlers registers all HTTP endpoints
@@ -62,7 +70,6 @@ func (h *httpServer) registerHandlers() {
 	h.handlers["/taskrun/explainFailure"] = h.handleExplainFailure
 	h.handlers["/health"] = h.handleHealthCheck
 	h.handlers["/pipelinerun/explainFailure"] = h.handlePipelineRunExplainFailure
-	// Add more endpoints here if needed
 }
 
 // initServer wires handlers, metrics, CORS, and creates http.Server
@@ -108,13 +115,12 @@ func (h *httpServer) handleExplainFailure(w http.ResponseWriter, r *http.Request
 
 	h.log.Printf("Diagnose request received: taskrun name=%s, namespace=%s", taskrunName, namespace)
 
-	ins, err := inspector.NewInspector()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to create inspector: %v", err), http.StatusInternalServerError)
+	if h.ins == nil {
+		http.Error(w, "inspector not initialized", http.StatusServiceUnavailable)
 		return
 	}
 
-	result, err := ins.InspectTaskRun(r.Context(), namespace, taskrunName)
+	result, err := h.ins.InspectTaskRun(r.Context(), namespace, taskrunName)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to inspect taskrun: %v", err), http.StatusInternalServerError)
 		return
@@ -163,13 +169,12 @@ func (h *httpServer) handlePipelineRunExplainFailure(w http.ResponseWriter, r *h
 
 	h.log.Printf("PipelineRun diagnosis request received: name=%s, namespace=%s", pipelineRunName, namespace)
 
-	ins, err := inspector.NewInspector()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("failed to create inspector: %v", err), http.StatusInternalServerError)
+	if h.ins == nil {
+		http.Error(w, "inspector not initialized", http.StatusServiceUnavailable)
 		return
 	}
 
-	result, err := ins.InspectPipelineRun(r.Context(), namespace, pipelineRunName)
+	result, err := h.ins.InspectPipelineRun(r.Context(), namespace, pipelineRunName)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to inspect pipelinerun: %v", err), http.StatusInternalServerError)
 		return
