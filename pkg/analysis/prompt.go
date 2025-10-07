@@ -24,29 +24,61 @@ import (
 // BuildTaskRunPrompt creates a concise user prompt for the LLM from TaskRunDebugInfo.
 func BuildTaskRunPrompt(info types.TaskRunDebugInfo) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Analyze this Tekton TaskRun failure and propose fixes.\n")
-	fmt.Fprintf(&b, "Provide: root cause, likely failing component, and concrete remediation steps.\n\n")
-	fmt.Fprintf(&b, "Context:\n")
+
+	fmt.Fprintf(&b, "You are a senior DevOps engineer specializing in Kubernetes, Tekton, and CI/CD pipelines. ")
+	fmt.Fprintf(&b, "Analyze this Tekton TaskRun failure and provide specific remediation steps.\n\n")
+
+	fmt.Fprintf(&b, "TASK RUN DETAILS:\n")
 	fmt.Fprintf(&b, "- TaskRun: %s\n", info.TaskRun)
 	fmt.Fprintf(&b, "- Namespace: %s\n", info.Namespace)
-	if info.Succeeded {
-		fmt.Fprintf(&b, "- Succeeded: true\n")
-	} else {
-		fmt.Fprintf(&b, "- Succeeded: false\n")
-	}
+	fmt.Fprintf(&b, "- Status: %s\n", map[bool]string{true: "Succeeded", false: "Failed"}[info.Succeeded])
+
 	if info.FailedStep.Name != "" || info.FailedStep.ExitCode != 0 {
-		fmt.Fprintf(&b, "- Failed Step: %s (exitCode=%d)\n", info.FailedStep.Name, info.FailedStep.ExitCode)
+		fmt.Fprintf(&b, "- Failed Step: %s (Exit Code: %d)\n", info.FailedStep.Name, info.FailedStep.ExitCode)
 	}
+
 	if (info.Error != types.ErrorInfo{}) {
-		fmt.Fprintf(&b, "- Error: type=%s status=%s reason=%s\n", info.Error.Type, info.Error.Status, info.Error.Reason)
+		fmt.Fprintf(&b, "- Error Type: %s\n", info.Error.Type)
+		fmt.Fprintf(&b, "- Error Reason: %s\n", info.Error.Reason)
 		if m := strings.TrimSpace(info.Error.Message); m != "" {
-			fmt.Fprintf(&b, "- Message: %s\n", truncate(m, 600))
-		}
-		if ls := strings.TrimSpace(info.Error.LogSnippet); ls != "" {
-			fmt.Fprintf(&b, "- Log Snippet:\n%s\n", truncate(ls, 1200))
+			fmt.Fprintf(&b, "- Error Message: %s\n", truncate(m, 600))
 		}
 	}
-	fmt.Fprintf(&b, "\nConstraints:\n- Be precise and brief.\n- Output 3-6 bullet points.\n")
+
+	if ls := strings.TrimSpace(info.Error.LogSnippet); ls != "" {
+		fmt.Fprintf(&b, "\nRELEVANT LOGS:\n%s\n", truncate(ls, 1200))
+	}
+
+	fmt.Fprintf(&b, `
+ANALYSIS REQUIREMENTS:
+Provide analysis in this exact structure:
+
+[Brief overview of why the job failed, mentioning the primary issues]
+
+Root Cause
+
+[Explanation of what caused this specific issue and why it happens in the context of Tekton/CI/CD]
+
+Solutions
+
+1. [Solution for first issue]
+- [Specific actionable step]
+- [Another specific step]
+- [Example code or configuration change if relevant]
+
+2. [Solution for second issue] 
+- [Specific actionable step]
+- [Another specific step]
+- [Example code or configuration change if relevant]
+
+FORMATTING INSTRUCTIONS:
+- Use plain text only, NO markdown symbols (*, **, etc.)
+- Use numbered lists for solutions and hyphens for sub-steps
+- Include concrete examples and code snippets when relevant
+- Focus on immediate fixes and preventive measures
+- Keep explanations concise but informative
+`)
+
 	return b.String()
 }
 
@@ -64,12 +96,15 @@ func truncate(s string, n int) string {
 func BuildPipelineRunPrompt(result *types.PipelineRunDebugInfo) string {
 	var prompt strings.Builder
 
-	prompt.WriteString("Analyze this failed Tekton PipelineRun and provide a concise diagnosis:\n\n")
-	prompt.WriteString(fmt.Sprintf("PipelineRun: %s/%s\n", result.PipelineRun.Namespace, result.PipelineRun.Name))
-	prompt.WriteString(fmt.Sprintf("Status: %s\n", result.Status.Phase))
+	prompt.WriteString("You are a senior DevOps engineer specializing in Kubernetes, Tekton, and CI/CD pipelines. ")
+	prompt.WriteString("Analyze this failed Tekton PipelineRun and provide specific remediation steps.\n\n")
+
+	prompt.WriteString("PIPELINE RUN DETAILS:\n")
+	prompt.WriteString(fmt.Sprintf("- PipelineRun: %s/%s\n", result.PipelineRun.Namespace, result.PipelineRun.Name))
+	prompt.WriteString(fmt.Sprintf("- Status: %s\n", result.Status.Phase))
 
 	if len(result.Status.Conditions) > 0 {
-		prompt.WriteString("\nConditions:\n")
+		prompt.WriteString("\nCONDITIONS:\n")
 		for _, cond := range result.Status.Conditions {
 			prompt.WriteString(fmt.Sprintf("- %s: %s (%s) - %s\n",
 				cond.Type, cond.Status, cond.Reason, cond.Message))
@@ -77,7 +112,7 @@ func BuildPipelineRunPrompt(result *types.PipelineRunDebugInfo) string {
 	}
 
 	if len(result.FailedTaskRuns) > 0 {
-		prompt.WriteString(fmt.Sprintf("\nFailed TaskRuns (%d):\n", len(result.FailedTaskRuns)))
+		prompt.WriteString(fmt.Sprintf("\nFAILED TASKRUNS (%d):\n", len(result.FailedTaskRuns)))
 		for _, tr := range result.FailedTaskRuns {
 			prompt.WriteString(fmt.Sprintf("- %s: %s - %s\n", tr.Name, tr.Reason, tr.Message))
 		}
@@ -85,7 +120,35 @@ func BuildPipelineRunPrompt(result *types.PipelineRunDebugInfo) string {
 		prompt.WriteString("\nNo TaskRuns were created, indicating a validation or scheduling failure.\n")
 	}
 
-	prompt.WriteString("\nProvide a concise analysis of the root cause and suggested remediation steps.")
+	prompt.WriteString(`
+ANALYSIS REQUIREMENTS:
+Provide analysis in this exact structure:
+
+[Brief overview of why the PipelineRun failed, mentioning the primary issues]
+
+Root Cause
+
+[Explanation of what caused this specific issue in the context of Tekton pipelines]
+
+Solutions
+
+1. [Solution for first issue]
+- [Specific actionable step]
+- [Another specific step]
+- [Example Tekton resource change if relevant]
+
+2. [Solution for second issue] 
+- [Specific actionable step]
+- [Another specific step]
+- [Example Tekton resource change if relevant]
+
+FORMATTING INSTRUCTIONS:
+- Use plain text only, NO markdown symbols (*, **, etc.)
+- Use numbered lists for solutions and hyphens for sub-steps
+- Include concrete examples and YAML snippets when relevant
+- Focus on pipeline configuration, resource constraints, and dependencies
+- Keep explanations concise but informative
+`)
 
 	return prompt.String()
 }
