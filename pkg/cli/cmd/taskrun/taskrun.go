@@ -19,8 +19,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewTaskRunCommand creates the taskrun command
-func NewTaskRunCommand(params common.Params) *cobra.Command {
+// TaskRunCommand creates the taskrun command
+func TaskRunCommand(params common.Params) *cobra.Command {
 	taskrunCmd := &cobra.Command{
 		Use:   "taskrun",
 		Short: "Commands for working with TaskRuns",
@@ -34,7 +34,7 @@ func NewTaskRunCommand(params common.Params) *cobra.Command {
 	}
 
 	// Add subcommands
-	taskrunCmd.AddCommand(NewDiagnoseCommand(params))
+	taskrunCmd.AddCommand(DiagnoseCommand(params))
 
 	return taskrunCmd
 }

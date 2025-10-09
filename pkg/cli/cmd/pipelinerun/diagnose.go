@@ -35,8 +35,8 @@ type DiagnoseOptions struct {
 	Timeout         time.Duration
 }
 
-// NewDiagnoseCommand creates the diagnose command for PipelineRuns
-func NewDiagnoseCommand(params common.Params) *cobra.Command {
+// DiagnoseCommand creates the diagnose command for PipelineRuns
+func DiagnoseCommand(params common.Params) *cobra.Command {
 	opts := &DiagnoseOptions{
 		Params:  params,
 		Output:  "text",
@@ -272,7 +272,7 @@ func displayStructuredText(data map[string]interface{}) error {
 					condStatus, _ := cond["status"].(string)
 					reason, _ := cond["reason"].(string)
 					message, _ := cond["message"].(string)
-					
+
 					var statusIcon string
 					switch condStatus {
 					case "True":
@@ -282,7 +282,7 @@ func displayStructuredText(data map[string]interface{}) error {
 					default:
 						statusIcon = "❓"
 					}
-					
+
 					fmt.Printf("  %s %s: %s (%s)\n", statusIcon, condType, condStatus, reason)
 					if message != "" {
 						fmt.Printf("    Message: %s\n", message)
@@ -302,7 +302,7 @@ func displayStructuredText(data map[string]interface{}) error {
 					name, _ := taskRun["name"].(string)
 					reason, _ := taskRun["reason"].(string)
 					message, _ := taskRun["message"].(string)
-					
+
 					fmt.Printf("  %d. ❌ %s\n", i+1, name)
 					fmt.Printf("     Reason: %s\n", reason)
 					if message != "" {
@@ -330,5 +330,3 @@ func displayStructuredText(data map[string]interface{}) error {
 	fmt.Println()
 	return nil
 }
-
-

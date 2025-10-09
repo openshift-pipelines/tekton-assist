@@ -35,8 +35,8 @@ type DiagnoseOptions struct {
 	Timeout     time.Duration
 }
 
-// NewDiagnoseCommand creates the diagnose command for TaskRuns
-func NewDiagnoseCommand(params common.Params) *cobra.Command {
+// DiagnoseCommand creates the diagnose command for TaskRuns
+func DiagnoseCommand(params common.Params) *cobra.Command {
 	opts := &DiagnoseOptions{
 		Params:  params,
 		Output:  "text",

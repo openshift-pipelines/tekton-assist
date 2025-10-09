@@ -29,8 +29,8 @@ const (
 	version = "dev"
 )
 
-// NewRootCommand creates the root command for tkn-assist
-func NewRootCommand() *cobra.Command {
+// RootCommand creates the root command for tkn-assist
+func RootCommand() *cobra.Command {
 	// Create common params
 	params := common.NewParams()
 
@@ -49,22 +49,24 @@ This tool can be used as a tkn plugin by naming the binary 'tkn-assist'.`,
 
   # Diagnose a TaskRun in a specific namespace
   tkn-assist taskrun diagnose my-taskrun -n my-namespace`,
-		SilenceUsage: true,
+		Annotations: map[string]string{
+			"commandType": "main",
+		},
 	}
 
 	// Add global flags using common params
 	params.AddFlags(rootCmd)
 
 	// Add subcommands
-	rootCmd.AddCommand(taskrun.NewTaskRunCommand(params))
-	rootCmd.AddCommand(pipelinerun.NewPipelineRunCommand(params))
-	rootCmd.AddCommand(newVersionCommand())
+	rootCmd.AddCommand(taskrun.TaskRunCommand(params))
+	rootCmd.AddCommand(pipelinerun.PipelineRunCommand(params))
+	rootCmd.AddCommand(versionCommand())
 
 	return rootCmd
 }
 
-// newVersionCommand creates the version command
-func newVersionCommand() *cobra.Command {
+// versionCommand creates the version command
+func versionCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
 		Short: "Print version information",
@@ -76,7 +78,7 @@ func newVersionCommand() *cobra.Command {
 
 // Execute runs the root command
 func Execute() {
-	if err := NewRootCommand().Execute(); err != nil {
+	if err := RootCommand().Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}

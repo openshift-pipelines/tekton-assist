@@ -19,8 +19,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewPipelineRunCommand creates the pipelinerun command
-func NewPipelineRunCommand(params common.Params) *cobra.Command {
+// PipelineRunCommand creates the pipelinerun command
+func PipelineRunCommand(params common.Params) *cobra.Command {
 	pipelineRunCmd := &cobra.Command{
 		Use:   "pipelinerun",
 		Short: "Commands for working with PipelineRuns",
@@ -34,9 +34,7 @@ func NewPipelineRunCommand(params common.Params) *cobra.Command {
 	}
 
 	// Add subcommands
-	pipelineRunCmd.AddCommand(NewDiagnoseCommand(params))
+	pipelineRunCmd.AddCommand(DiagnoseCommand(params))
 
 	return pipelineRunCmd
 }
-
-
