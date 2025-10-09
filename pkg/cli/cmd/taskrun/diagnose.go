@@ -23,7 +23,7 @@ import (
 	"github.com/openshift-pipelines/tekton-assist/pkg/cli/client"
 	"github.com/openshift-pipelines/tekton-assist/pkg/cli/common"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // DiagnoseOptions holds options specific to the diagnose command
