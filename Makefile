@@ -42,6 +42,7 @@ $(BIN)/%: | $(BIN) ; $(info $(M) building $(PACKAGE)…)
 FORCE:
 
 bin/%: cmd/% FORCE
+	@mkdir -p $(dir $@)
 	$Q $(GO) build -mod=vendor $(LDFLAGS) -v -o $@ ./$<
 
 KO = $(or ${KO_BIN},${KO_BIN},$(BIN)/ko)
@@ -50,13 +51,20 @@ $(BIN)/ko: PACKAGE=github.com/google/ko@latest
 KUSTOMIZE = $(or ${KUSTOMIZE_BIN},kustomize)
 KUBECTL = $(or ${KUBECTL_BIN},kubectl)
 
-.PHONY: apply
-apply: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config/overlays/dev  | $(KO) resolve -f - | $(KUBECTL) apply -f -) @ ## Apply config to the current cluster
-	$Q $(KUSTOMIZE) build config/overlays/dev  | $(KO) resolve -f - | $(KUBECTL) apply -f -
+# ko image build/publish
 
-.PHONY: resolve
-resolve: | $(KO) ; $(info $(M) $(KUSTOMIZE) build config/overlays/dev  | $(KO) resolve -f -) @ ## Resolve config to the current cluster
-	$Q $(KUSTOMIZE) build config/overlays/dev  | $(KO) resolve -f -
+# Import path to build as the container image (ko publishes this)
+IMAGE_IMPORT_PATH ?= ./cmd/tkn-assist
+
+# Platforms to build for (comma-separated), e.g. linux/amd64,linux/arm64
+PLATFORMS ?= linux/amd64
+
+.PHONY: image
+image: | $(KO) ; $(info $(M) building container image with ko…) @ ## Build/publish container image using ko
+	$Q CGO_ENABLED=0 $(KO) build $(IMAGE_IMPORT_PATH) --platform=$(PLATFORMS) --tags $(VERSION)
+
+.PHONY: build
+build: bin/tkn-assist ; $(info $(M) building tkn-assist binary…) @ ## Build the tkn-assist CLI binary
 
 .PHONY: vendor
 vendor:

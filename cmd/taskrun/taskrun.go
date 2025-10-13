@@ -12,31 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package taskrun
 
 import (
-	"fmt"
-	"os"
-
-	prcmd "github.com/openshift-pipelines/tekton-assist/cmd/pipelinerun"
-	trcmd "github.com/openshift-pipelines/tekton-assist/cmd/taskrun"
 	"github.com/spf13/cobra"
 )
 
-func main() {
-	rootCmd := &cobra.Command{
-		Use:           "tkn-assist",
-		Short:         "AI-assisted diagnosis for Tekton",
-		SilenceUsage:  true,
-		SilenceErrors: true,
+// TaskRunCommand creates the taskrun command
+func TaskRunCommand() *cobra.Command {
+	taskrunCmd := &cobra.Command{
+		Use:   "taskrun",
+		Short: "Commands for working with TaskRuns",
+		Long:  `Commands for diagnosing and analyzing Tekton TaskRuns.`,
+		Example: `  # Diagnose a failed TaskRun
+  tkn-assist taskrun diagnose my-failed-taskrun
+
+  # List available TaskRuns for diagnosis
+  tkn-assist taskrun list`,
+		Aliases: []string{"tr", "taskruns"},
 	}
 
-	// Add top-level command groups
-	rootCmd.AddCommand(trcmd.TaskRunCommand())
-	rootCmd.AddCommand(prcmd.PipelineRunCommand())
+	// Add subcommands
+	taskrunCmd.AddCommand(DiagnoseCommand())
 
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	return taskrunCmd
 }
