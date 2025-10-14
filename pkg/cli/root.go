@@ -12,22 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package cli
 
 import (
-	"fmt"
-	"os"
-
-	cli "github.com/openshift-pipelines/tekton-assist/pkg/cli"
+	prcmd "github.com/openshift-pipelines/tekton-assist/pkg/cli/pipelinerun"
+	trcmd "github.com/openshift-pipelines/tekton-assist/pkg/cli/taskrun"
+	"github.com/spf13/cobra"
 )
 
-func main() {
-	rootCmd := cli.RootCommand()
-	rootCmd.Use = "tkn-assist"
-	rootCmd.SilenceUsage = true
-	rootCmd.SilenceErrors = true
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+// RootCommand returns the root command for the assist CLI. Consumers (like OPC)
+// can import this package and mount the returned command under their own root.
+func RootCommand() *cobra.Command {
+	root := &cobra.Command{
+		Use:   "assist",
+		Short: "AI-assisted diagnosis for Tekton",
 	}
+
+	// Add top-level groups
+	root.AddCommand(trcmd.TaskRunCommand())
+	root.AddCommand(prcmd.PipelineRunCommand())
+
+	return root
 }
