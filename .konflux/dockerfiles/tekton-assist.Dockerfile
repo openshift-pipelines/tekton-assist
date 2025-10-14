@@ -11,7 +11,7 @@ RUN set -e; for f in patches/*.patch; do echo ${f}; [[ -f ${f} ]] || continue; g
 ENV GOEXPERIMENT=strictfipsruntime
 RUN git rev-parse HEAD > /tmp/HEAD
 RUN go build -ldflags="-X 'knative.dev/pkg/changeset.rev=$(cat /tmp/HEAD)'" -mod=vendor -tags disable_gcp,strictfipsruntime -v -o /tmp/tekton-assist \
-    ./cmd/diagnose
+    ./cmd/tkn-assist
 
 FROM $RUNTIME
 ARG VERSION=tekton-assist-main

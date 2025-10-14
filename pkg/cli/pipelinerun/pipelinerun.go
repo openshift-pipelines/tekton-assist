@@ -26,6 +26,9 @@ func PipelineRunCommand() *cobra.Command {
 		Long:    `Commands for diagnosing and analyzing Tekton PipelineRuns.`,
 		Example: "  # Diagnose a failed PipelineRun\n  tkn-assist pipelinerun diagnose my-failed-pipelinerun",
 		Aliases: []string{"pr", "pipelineruns"},
+		Annotations: map[string]string{
+			"commandType": "main",
+		},
 	}
 
 	// Add subcommands

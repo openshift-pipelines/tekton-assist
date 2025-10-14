@@ -24,6 +24,8 @@ import (
 func main() {
 	rootCmd := cli.RootCommand()
 	rootCmd.Use = "tkn-assist"
+	rootCmd.Short = "AI-assisted diagnosis for Tekton"
+	rootCmd.Long = `tkn plugin to use AI-assisted diagnosis for Tekton`
 	rootCmd.SilenceUsage = true
 	rootCmd.SilenceErrors = true
 	if err := rootCmd.Execute(); err != nil {

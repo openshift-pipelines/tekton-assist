@@ -41,33 +41,6 @@ jobs:
       with:
         version: tip
 
-    - name: Create kind cluster
-      run: |  
-        kind create cluster --config "./test/kind-cluster.yaml" --wait=60s
-        while ! kubectl get nodes 
-        do
-          echo "waiting for kind cluster to be ready"
-          sleep 2
-        done
-
-    - name: Install Tekton pipelines
-      run: |
-        while ! kubectl apply --filename ${{ env.TEKTON_PIPELINES_RELEASE }}
-        do
-          echo "waiting for tekton pipelines to get installed"
-          sleep 2
-        done
-
-        # Restart so picks up the changes.
-        kubectl -n tekton-pipelines delete po -l app=tekton-pipelines-controller
-
-    - name: Install everything
-      timeout-minutes: 10
-      run: |
-        export KO_DOCKER_REPO=kind.local
-        make apply
-        sleep 10
-
     - name: Run Integration tests
       run: |
         echo "Running Go e2e tests"
