@@ -132,18 +132,20 @@ func runDiagnose(ctx context.Context, opts *DiagnoseOptions) error {
 		}
 	}
 
-	// Build query payload (ask for solutions and structured fields)
+	// Build query payload (chat-style phrasing + ask for solutions + JSON shape)
 	query := fmt.Sprintf(
-		"Diagnose Tekton PipelineRun '%s' in namespace '%s'. "+
-			"Provide a concise summary, analysis, and 3-5 concrete solutions/remediations. "+
-			"When possible, return a JSON object including fields: response (string), analysis (string), solutions (array of strings).",
+		"Why is my Tekton PipelineRun '%s' failing in namespace '%s'? "+
+			"Provide a brief summary, a clear root-cause analysis, and 3-5 actionable solutions. "+
+			"If possible, respond as a JSON object with fields: response (string), analysis (string), solutions (array of strings).",
 		opts.PipelineRunName, namespace,
 	)
 	if opts.Verbose {
 		fmt.Printf("Query: %s\n", query)
 	}
 
-	payload := map[string]string{"query": query}
+	payload := map[string]interface{}{
+		"query": query,
+	}
 	bodyBytes, err := json.Marshal(payload)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request body: %w", err)
@@ -282,15 +284,21 @@ func displayStructuredText(data map[string]interface{}) error {
 
 	printed := false
 
-	// Prefer top-level LLM response if present (strip possible json fenced block)
+	// Prefer top-level LLM response if present. Handle embedded fenced JSON blocks.
 	if resp, ok := data["response"].(string); ok && resp != "" {
-		clean := stripCodeFence(resp)
-		trim := strings.TrimSpace(clean)
-		if len(trim) > 0 && (trim[0] == '{' || trim[0] == '[') {
+		if openIdx, contentStart, closeStart, okFence := findFence(resp); okFence {
+			preface := strings.TrimSpace(resp[:openIdx])
+			if preface != "" {
+				fmt.Printf("Summary:\n%s\n\n", preface)
+				printed = true
+			}
+			inner := strings.TrimSpace(resp[contentStart:closeStart])
+			inner = stripFenceLanguage(inner)
+			inner = strings.TrimSpace(inner)
 			var embedded interface{}
-			if err := json.Unmarshal([]byte(trim), &embedded); err == nil {
+			if len(inner) > 0 && (inner[0] == '{' || inner[0] == '[') && json.Unmarshal([]byte(inner), &embedded) == nil {
 				if obj, ok := embedded.(map[string]interface{}); ok {
-					if s, ok := obj["response"].(string); ok && s != "" {
+					if s, ok := obj["response"].(string); ok && s != "" && preface == "" {
 						fmt.Printf("Summary:\n%s\n\n", s)
 						printed = true
 					}
@@ -312,10 +320,14 @@ func displayStructuredText(data map[string]interface{}) error {
 					}
 				}
 			}
-		}
-		if !printed {
-			fmt.Printf("Summary:\n%s\n\n", clean)
-			printed = true
+			// Do not print the fenced block itself
+		} else {
+			clean := stripCodeFence(resp)
+			clean = truncateAtFence(clean)
+			if clean != "" {
+				fmt.Printf("Summary:\n%s\n\n", clean)
+				printed = true
+			}
 		}
 	}
 
@@ -554,6 +566,44 @@ func readFileIfExists(path string) string {
 
 func safeClose(c io.Closer) {
 	_ = c.Close()
+}
+
+// findFence locates the first ``` fenced code block and returns indexes to its contents
+func findFence(s string) (openIdx, contentStart, closeStart int, ok bool) {
+	openIdx = strings.Index(s, "```")
+	if openIdx == -1 {
+		return 0, 0, 0, false
+	}
+	nl := strings.Index(s[openIdx+3:], "\n")
+	if nl == -1 {
+		return 0, 0, 0, false
+	}
+	contentStart = openIdx + 3 + nl + 1
+	j := strings.Index(s[contentStart:], "```")
+	if j == -1 {
+		return 0, 0, 0, false
+	}
+	closeStart = contentStart + j
+	return openIdx, contentStart, closeStart, true
+}
+
+// stripFenceLanguage removes a leading language id from a fenced block (e.g., json)
+func stripFenceLanguage(s string) string {
+	if ln := strings.Index(s, "\n"); ln != -1 {
+		first := strings.TrimSpace(s[:ln])
+		if first == "json" || first == "yaml" || first == "yml" || first == "bash" || first == "txt" {
+			return s[ln+1:]
+		}
+	}
+	return s
+}
+
+// truncateAtFence removes any trailing markdown fence and following content
+func truncateAtFence(s string) string {
+	if idx := strings.Index(s, "```"); idx != -1 {
+		return strings.TrimSpace(s[:idx])
+	}
+	return s
 }
 
 // stripCodeFence removes leading/trailing markdown code fences if present
