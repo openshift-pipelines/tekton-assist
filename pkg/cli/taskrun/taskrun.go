@@ -25,11 +25,11 @@ func TaskRunCommand() *cobra.Command {
 		Short: "Commands for working with TaskRuns",
 		Long:  `Commands for diagnosing and analyzing Tekton TaskRuns.`,
 		Example: `  # Diagnose a failed TaskRun
-  tkn-assist taskrun diagnose my-failed-taskrun
-
-  # List available TaskRuns for diagnosis
-  tkn-assist taskrun list`,
+  tkn-assist taskrun diagnose my-failed-taskrunt`,
 		Aliases: []string{"tr", "taskruns"},
+		Annotations: map[string]string{
+			"commandType": "main",
+		},
 	}
 
 	// Add subcommands

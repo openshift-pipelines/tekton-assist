@@ -24,8 +24,12 @@ import (
 // can import this package and mount the returned command under their own root.
 func RootCommand() *cobra.Command {
 	root := &cobra.Command{
-		Use:   "assist",
+		Use:   "tkn-assist",
 		Short: "AI-assisted diagnosis for Tekton",
+		Long:  `tkn plugin to use AI-assisted diagnosis for Tekton`,
+		Annotations: map[string]string{
+			"commandType": "main",
+		},
 	}
 
 	// Add top-level groups

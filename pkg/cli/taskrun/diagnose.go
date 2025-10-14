@@ -470,7 +470,6 @@ func displayStructuredText(data map[string]interface{}) error {
 			fmt.Println("API Response:")
 			fmt.Println("=============")
 			fmt.Println(string(b))
-			printed = true
 		}
 	}
 
@@ -577,13 +576,6 @@ func resolveToken(tokenFlag, tokenFile string) string {
 	}
 	if env := os.Getenv("LIGHTSPEED_TOKEN"); env != "" {
 		return env
-	}
-	return ""
-}
-
-func readFileIfExists(path string) string {
-	if b, err := os.ReadFile(path); err == nil {
-		return string(bytes.TrimSpace(b))
 	}
 	return ""
 }
