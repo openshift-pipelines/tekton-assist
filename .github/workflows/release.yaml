@@ -143,7 +143,7 @@ jobs:
         prerelease: ${{ contains(steps.version.outputs.tag, '-') }}
 
     - name: Upload images list as artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: built-images-${{ steps.version.outputs.tag }}
         path: |
